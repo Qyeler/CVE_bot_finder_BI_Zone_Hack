@@ -80,3 +80,50 @@ def translate(text):
    payload = [{"Text": f"{text}"}]
    response = requests.post(url, json=payload, headers=headers, params=querystring)
    return response.json()[0]["translations"][0]["text"]
+
+
+def pars_info(str):
+   s = f"https://www.opencve.io/cve/{str}"
+   s= requests.request("get",s).text
+   s = s[s.find("reference_data"):]
+   i = s.find("http")
+   ans = {"links": []}
+   if 'url&#34;:34;' in s:
+      while i < s.find("impactScore") and i != -1:
+         ans["links"].append(s[i:s.find(";", i)].replace("&#34", ""))
+         s = s[s.find(";", i):]
+         if i < s.find("impactScore") and i != -1:
+            i = s.find("http")
+         else:
+            break
+   else:
+      ans["links"].append("None")
+   if "impactScore" in s:
+      ans["impactScore"] = s[s.find(":", s.find("impactScore")) + 1:s.find(",", s.find("impactScore"))].replace("\n",
+                                                                                                                "").replace(
+         "\t", "")
+   else:
+      ans["impactScore"]="None"
+   if "exploitabilityScore" in s:
+      ans["exploitabilityScore"] = s[
+                                   s.find(":", s.find("exploitabilityScore")) + 1:s.find("}",
+                                                                                         s.find("exploitabilityScore"))]
+   else:
+      ans["exploitabilityScore"]="None"
+   if "publishedDate" in s:
+      ans["publishedDate"] = s[s.find(":", s.find("publishedDate")) + 1:s.find(",", s.find("publishedDate"))].replace("\n",
+                                                                                                                      "").replace(
+         "\t", "")
+      ans["publishedDate"] = ans["publishedDate"].replace("&#34;", "")
+   else:
+      ans["publishedDate"]="None"
+   if "CVSS" in s:
+      ans["CVSS"] = s[s.find("CVSS") + 5:s.find("/", s.find("CVSS"))]
+   else:
+      ans["CVSS"]="None"
+   if "ID" in s:
+      ans["ID"] = s[s.find(":", s.find("ID")) + 2:s.find(",", s.find("ID"))]
+      ans["ID"] = ans["ID"].replace("&#34;", "")
+   else:
+      ans["ID"]="None"
+   return ans

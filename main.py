@@ -73,13 +73,27 @@ def search_params_menu(message):
                     users[message.chat.id].pop("bd_search", None)
                     users[message.chat.id].pop("cond", None)
                     return
+                users[message.chat.id]["bd_search"]["param"] = []
                 for i in ans:
                     markup=back_bot.Get_inline_marrkup(f"CVE-{i[0]}")[1]
+                    arr_info=back_bot.pars_info(f"CVE-{i[0]}")
+                    users[message.chat.id]["bd_search"]["param"].append(arr_info)
                     if users[message.chat.id]["lang"]=="eu":
-                        sent_message = bot.send_message(message.chat.id, f"💢CVE Номер:{i[0]}\n\nℹ️Описание CVE:{i[1]}",
+                        tmp=""
+                        for j in arr_info["links"]:
+                            tmp+=j+'\n'
+                        sent_message = bot.send_message(message.chat.id, f"💢CVE Номер:{i[0]}\n\nℹ️Описание CVE:{i[1]}\nimpactScore: {arr_info['impactScore']}"
+                                                                         f"\nExploitabilityScore: {arr_info['impactScore']}\n"
+                                                                         f"publishedDate:{arr_info['publishedDate']}\n"
+                                                                         f"CVSS rate:{arr_info['CVSS']}\n"
+                                                                         f"Links: {tmp}",
                                                         reply_markup=markup)
                     else:
-                        sent_message = bot.send_message(message.chat.id, f"💢CVE Номер:{i[0]}\n\nℹ️Описание CVE:{back_bot.translate(i[1])}",
+                        sent_message = bot.send_message(message.chat.id,  f"💢CVE Номер:{i[0]}\n\nℹ️Описание CVE:{back_bot.translate(i[1])}\nimpactScore: {arr_info['impactScore']}"
+                                                                         f"\nExploitabilityScore: {arr_info['impactScore']}\n"
+                                                                         f"publishedDate:{arr_info['publishedDate']}\n"
+                                                                         f"CVSS rate:{arr_info['CVSS']}\n"
+                                                                         f"Links: {tmp}",
                                                         reply_markup=markup)
 
                 users[message.chat.id]["place"] = "sort_menu"
@@ -95,23 +109,18 @@ def search_params_menu(message):
                 markup.add(itembtn1, itembtn2, itembtn3, itembtn4, itembtn5, itembtn6, itembtn7, itembtn8)
                 sent_message = bot.send_message(message.chat.id,
                                                 'Мы можем отсортировать список по этим категориям:\n'
-                                                '🔍 Уровень критичности\n'
-                                                '🔍 CVSS рейтинг\n'
-                                                '🔍 Метрики CVSS\n'
-                                                '🔍 EPSS рейтинг\n'
-                                                '🔍 Дата/время регистрации CVE\n'
-                                                '🔍 Присутсвие PoC/CVE WriteUp\n', reply_markup=markup)
+                                                '🔍 Уровень критичности⚠️\n'
+                                                '🔍 CVSS рейтинг✅\n'
+                                                '🔍 Метрики CVSS❌\n'
+                                                '🔍 EPSS рейтинг❌\n'
+                                                '🔍 Дата/время регистрации CVE✅\n'
+                                                '🔍 Присутсвие PoC/CVE WriteUp✅\n', reply_markup=markup)
             else:
                 users[message.chat.id].pop("bd_search", None)
                 users[message.chat.id].pop("cond", None)
 
 
 
-def find_CVE_parametr(name,version,parametrs):
-    if parametrs is None:
-        print("no parms")
-    else:
-        print(name,version,parametrs)
 
 def user_set_parametr_to_sort(message):
     users[message.chat.id]["place"] = "sort_menu"
@@ -128,25 +137,58 @@ def user_set_parametr_to_sort(message):
             users[message.chat.id]["waiting_ans"]="critic_lvl"
         case '🔍 CVSS рейтинг':
             sent_message = bot.send_message(message.chat.id, 'Введите промежуток от 1 до 10\n Например:\n"2-4"',reply_markup=markupRemove)
-            users[message.chat.id]["waiting_ans"] = "CVSS_rating"
-            print("2")
+            users[message.chat.id]["waiting_ans"] = "CVSS"
         case '🔍 Метрики CVSS':
             sent_message = bot.send_message(message.chat.id, 'Введите название метрик, которые нужно учитывать при поиске\n Например:\n"Network"\n"Adjacent Network"\n"Local"\nБез кавычек',reply_markup=markupRemove)
             users[message.chat.id]["waiting_ans"] = "metric_CVSS"
-            print("3")
         case '🔍 EPSS рейтинг':
             sent_message = bot.send_message(message.chat.id, 'Введите промежуток от 1 до 10\n Например:\n"4-7"',reply_markup=markupRemove)
             users[message.chat.id]["waiting_ans"] = "EPSS_rating"
         case '🔍 Дата/время регистрации CVE':
             sent_message = bot.send_message(message.chat.id,
                                             'Введите промежуток в формате ДД:ММ:ГГ-ДД:ММ:ГГ\n Например:\n"16:02:23"\n"26:05:23"\nБез кавычек',reply_markup=markupRemove)
-            users[message.chat.id]["waiting_ans"] = "date_CVE"
+            users[message.chat.id]["waiting_ans"] = "publishedDate"
         case '🔍 Присутсвие PoC/CVE WriteUp':
             sent_message = bot.send_message(message.chat.id,
                                             'Введите on/off чтобы все ответы содержали CVE WriteUp и PoC\n Например:\n"on"\n"off\nБез кавычек',reply_markup=markupRemove)
-            users[message.chat.id]["waiting_ans"] = "PoC/CVE_writeUp"
+            users[message.chat.id]["waiting_ans"] = "Links"
         case '🧐 Выполнить сортировку':
-            find_CVE_parametr(users[message.chat.id]["bd_search"]["product"],users[message.chat.id]["bd_search"]["version"],users[message.chat.id]["sort_parametrs"])
+            for j in users[message.chat.id]["bd_search"]["param"]:
+                for k in users[message.chat.id]["sort_parametrs"]:
+                    if k=="CVSS" or k=="Links" or "publishedDate":
+                        inf=1
+                        if k=="CVSS":
+                            f=users[message.chat.id]["sort_parametrs"][k]
+                            try:
+                                s=f[f.find("-")+1:]
+                                s=int(s)
+                                f=f[0:f.find("-")]
+                                f=int(f)
+                                tmp=0
+                                if j[k]!="None":
+                                    tmp=float(j[k])
+                                else:
+                                    inf=0
+                                if f<tmp<s:
+                                    inf=1
+                                else:
+                                    inf=0
+                            except:
+                                print("error 165")
+                                inf=0
+                        if k=="Links":
+                            try:
+                                if j[k]!="None":
+                                    inf = 0
+                                else:
+                                    inf = 1
+                            except:
+                                inf = 0
+                        if(inf):
+                            markup = back_bot.Get_inline_marrkup(j["ID"])[1]
+                            sent_message = bot.send_message(message.chat.id, j["ID"], reply_markup=markup)
+                    else:
+                        continue
         case '🔙 Выход из поиска CVE':
             users[message.chat.id]["place"]="none"
             echo_message(message)
