@@ -4,7 +4,7 @@ import back_bot
 from data.data_base import db_session
 from functions import *
 
-bot = telebot.TeleBot("6011527798:AAEHTIIZUgoEi6lOc9hDW_pF1G1rLVAfKds")
+bot = telebot.TeleBot("")
 users = {}
 db_session.global_init("./data/data_base.db")
 session = db_session.create_session()
